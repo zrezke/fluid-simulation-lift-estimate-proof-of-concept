@@ -10,9 +10,10 @@
 using namespace sf;
 
 // handle keyboard events, for now only if simulation should close
-void handleKeyboard(RenderWindow& window, Event& event)
+void handleKeyboard(RenderWindow &window, Event &event)
 {
-	if (event.type == sf::Event::KeyPressed) {
+	if (event.type == sf::Event::KeyPressed)
+	{
 		switch (event.key.code)
 		{
 		case sf::Keyboard::Escape:
@@ -25,7 +26,7 @@ void handleKeyboard(RenderWindow& window, Event& event)
 }
 
 // Handle events, for now only if simulation should close
-void handleEvents(RenderWindow& window, Event& event)
+void handleEvents(RenderWindow &window, Event &event)
 {
 	if (event.type == sf::Event::Closed)
 		window.close();
@@ -34,16 +35,16 @@ void handleEvents(RenderWindow& window, Event& event)
 
 int main()
 {
-	Vector2u simRes(800, 800); // pixel size of simulation
-	Vector2u toolRes(simRes.x, 50); // pixel size of UI portion
-	Vector2u resolution(simRes.x, simRes.y + toolRes.y); // total pixel size of contents
+	Vector2u simRes(800, 800);																																																												// pixel size of simulation
+	Vector2u toolRes(simRes.x, 50);																																																										// pixel size of UI portion
+	Vector2u resolution(simRes.x, simRes.y + toolRes.y);																																															// total pixel size of contents
 	RenderWindow window(sf::VideoMode(resolution.x, resolution.y), "Fluid Simulation Project by Pontus Asp", sf::Style::Titlebar | sf::Style::Close); // Create a window
 
 	Color bgColor(30, 30, 32); // Our clearing color, and background color for toolbar
 
 	// Initialize our Fluid Sim class with a 200x200 grid resolution, with a 1/8 scale on the
 	// vectorfield (every 8th grid will have a vector arrow). Then we set the diffusion and viscosity values.
-	FluidSimulation sim(200, .125, 0.00000001f, 0.00000002f);
+	FluidSimulation sim(200, .125, 0.00000001f, 0.00000018f);
 	sim.setScale(Vector2f(simRes.x, simRes.y)); // Scale up our simulation to fit the screen.
 
 	// load font for buttons
@@ -54,10 +55,12 @@ int main()
 		return -1;
 	}
 
-	int buttons = 0; // button counter for easier placement of them
+	int buttons = 0;		 // button counter for easier placement of them
 	bool paused = false; // dictates if simulation is paused or not
+	bool bExportFoil = false;
+	bool bImportFoil = false;
 	float marginLeft = 12.5f; // margin of each button
-	float bWidth = 145; // width of each button
+	float bWidth = 145;				// width of each button
 
 	// Create background rectangle behind buttons
 	RectangleShape uiBorder;
@@ -70,20 +73,23 @@ int main()
 
 	// Initialize all our buttons, probably pretty self explanatory, check header file to see what each value does.
 	ToggleButton vectorFieldToggle(&sim.vectorFieldActive, "vector field", Vector2f(marginLeft + (marginLeft + bWidth) * buttons++, 815), Vector2f(bWidth, 20),
-		Color(0, 150, 0), Color(40, 40, 40), Color::White, Color::White, font);
+																 Color(0, 150, 0), Color(40, 40, 40), Color::White, Color::White, font);
 
 	ToggleButton clearWallsToggle(&sim.shouldClearWalls, "clear walls", Vector2f(marginLeft + (marginLeft + bWidth) * buttons++, 815), Vector2f(bWidth, 20),
-		Color(40, 40, 40), Color(150, 0, 160), Color::White, Color::White, font);
+																Color(40, 40, 40), Color(150, 0, 160), Color::White, Color::White, font);
 
 	ToggleButton resetToggle(&sim.shouldReset, "reset", Vector2f(marginLeft + (marginLeft + bWidth) * buttons++, 815), Vector2f(bWidth, 20),
-		Color(40, 40, 40), Color(180, 0, 0), Color::White, Color::White, font);
+													 Color(40, 40, 40), Color(180, 0, 0), Color::White, Color::White, font);
 
-	ToggleButton simulationPause(&paused, "pause", Vector2f(marginLeft + (marginLeft + bWidth) * buttons++, 815), Vector2f(bWidth, 20),
-		Color(0, 0, 200), Color(40, 40, 40), Color::White, Color::White, font);
+	ToggleButton exportFoil(&bExportFoil, "Export foil", Vector2f(marginLeft + (marginLeft + bWidth) * buttons++, 815), Vector2f(bWidth, 20),
+													Color(0, 0, 200), Color(40, 40, 40), Color::White, Color::White, font);
+
+	ToggleButton importFoil(&bImportFoil, "Import foil", Vector2f(marginLeft + (marginLeft + bWidth) * buttons++, 815), Vector2f(bWidth, 20),
+													Color(0, 0, 200), Color(40, 40, 40), Color::White, Color::White, font);
 
 	bool nextStep = true;
 	ToggleButton nextStepToggle(&nextStep, "timestep + 1", Vector2f(marginLeft + (marginLeft + bWidth) * buttons++, 815), Vector2f(bWidth, 20),
-		Color(200, 80, 0), Color(200, 80, 0), Color::White, Color::White, font);
+															Color(200, 80, 0), Color(200, 80, 0), Color::White, Color::White, font);
 
 	// Our main loop that will power everthing in our simulation and window
 	while (window.isOpen())
@@ -96,7 +102,8 @@ int main()
 
 		// Check our buttons if we have clicked on them
 		vectorFieldToggle.Update(window);
-		simulationPause.Update(window);
+		exportFoil.Update(window);
+		importFoil.Update(window);
 		clearWallsToggle.Update(window);
 		resetToggle.Update(window);
 		if (paused) // Only check for clicks on the stepping button if the game is paused
@@ -112,8 +119,18 @@ int main()
 			sim.Step(.1f, 5); // Will step only once before nextStep is reset and has to be set to true through button press
 			nextStep = false;
 		}
+		if (bExportFoil)
+		{
+			sim.ExportFoil();
+			bExportFoil = false;
+		}
+		if (bImportFoil)
+		{
+			sim.LoadFoil();
+			bImportFoil = false;
+		}
 		sim.HandleMouse(window); // Update mouse in simulation (draw walls and velocity/density)
-		sim.UpdateImage(); // Update our MeshImage and VectorField in the simulation to prepare to be drawn to screen
+		sim.UpdateImage();			 // Update our MeshImage and VectorField in the simulation to prepare to be drawn to screen
 
 		window.clear(bgColor); // clear screen
 
@@ -122,7 +139,8 @@ int main()
 		// Draw our UI background and buttons
 		window.draw(uiBorder);
 		window.draw(vectorFieldToggle);
-		window.draw(simulationPause);
+		window.draw(exportFoil);
+		window.draw(importFoil);
 		window.draw(clearWallsToggle);
 		window.draw(resetToggle);
 		if (paused) // Only draw the stepping button if simulation is paused

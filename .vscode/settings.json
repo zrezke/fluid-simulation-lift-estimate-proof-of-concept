@@ -1,0 +1,15 @@
+{
+  "files.associations": {
+    "*.epub": "xml",
+    "*.Rmd": "rmarkdown",
+    "*.rmd": "markdown",
+    "*.html": "html",
+    ".clang-format": "yaml",
+    ".htmlhintrc": "json",
+    ".prettierrc": "json",
+    ".stylelintrc": "json",
+    "iosfwd": "cpp",
+    "new": "cpp",
+    "fstream": "cpp"
+  }
+}
